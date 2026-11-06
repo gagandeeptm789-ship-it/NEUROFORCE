@@ -16,6 +16,12 @@ from app.schemas.notice import (
     NoticeListResponse,
     NoticeResponse,
     NoticeStatusUpdate,
+    SignatureVerificationRequest,
+    SignatureVerificationResponse,
+    FileIntegrityVerificationResponse,
+    PublishNoticeResponse,
+    PublicKeyInfoResponse,
+    WatermarkInfoResponse,
 )
 
 __all__ = [
@@ -30,5 +36,10 @@ __all__ = [
     "NoticeListResponse",
     "NoticeResponse",
     "NoticeStatusUpdate",
+    "SignatureVerificationRequest",
+    "SignatureVerificationResponse",
+    "FileIntegrityVerificationResponse",
+    "PublishNoticeResponse",
+    "PublicKeyInfoResponse",
+    "WatermarkInfoResponse",
 ]
-

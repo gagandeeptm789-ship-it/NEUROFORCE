@@ -58,6 +58,18 @@ class Settings:
     NOTICE_ID_PREFIX: str = os.getenv("NOTICE_ID_PREFIX", "FS")
     INSTITUTION_CODE: str = os.getenv("INSTITUTION_CODE", "GMU")
 
+    # Phase 3: Cryptography & Key Management
+    KEYS_DIR: str = os.getenv("KEYS_DIR", "keys")
+    SIGNING_KEY_ID: str = os.getenv("SIGNING_KEY_ID", "key-GMU-2026-v1-ed25519")
+
+    # Phase 4: Public Verification URL & Publishing Artifact Directories
+    PUBLIC_VERIFICATION_BASE_URL: str = os.getenv(
+        "PUBLIC_VERIFICATION_BASE_URL", "http://localhost:3000/verify"
+    )
+    QR_DIR: str = os.getenv("QR_DIR", "uploads/qr_codes")
+    WATERMARK_DIR: str = os.getenv("WATERMARK_DIR", "uploads/watermarked")
+    PUBLISHED_DIR: str = os.getenv("PUBLISHED_DIR", "uploads/published")
+
     # CORS Origins
     _raw_cors: str = os.getenv(
         "ALLOWED_CORS_ORIGINS",

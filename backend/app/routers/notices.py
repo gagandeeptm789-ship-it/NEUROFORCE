@@ -29,12 +29,17 @@ from app.schemas.notice import (
     NoticeListResponse,
     NoticeResponse,
     NoticeStatusUpdate,
+    PublishNoticeResponse,
+    WatermarkInfoResponse,
 )
 from app.services.auth_service import get_admin_by_id, get_current_active_admin
 from app.services.notice_service import (
     create_notice,
     get_notice_by_id,
+    get_notice_by_notice_id,
     list_notices,
+    publish_notice,
+    revoke_notice,
     update_notice_status,
 )
 from app.services.storage_service import get_storage_service
