@@ -9,6 +9,7 @@ import pytest
 from fastapi import HTTPException, UploadFile
 
 from app.core import config
+from app.models.notice import Notice
 from app.routers.notices import (
     create_new_notice,
     download_notice_file,
@@ -303,3 +304,78 @@ def test_download_notice_file_stream(db_session, test_admin, test_storage, sampl
     assert file_resp.body == sample_pdf_content
     assert file_resp.media_type == "application/pdf"
     assert "timetable.pdf" in file_resp.headers["Content-Disposition"]
+
+
+def test_notice_list_includes_dashboard_stats(db_session, test_admin):
+    """Keep the dashboard list response aligned with its backend stats contract."""
+    response = get_notices(
+        page=1,
+        page_size=20,
+        category=None,
+        status="all",
+        search=None,
+        current_admin=test_admin,
+        db=db_session,
+    )
+
+    assert response.stats is not None
+    assert response.stats.total_notices == 0
+    assert response.stats.published_notices == 0
+
+
+def test_public_notice_list_does_not_expose_unpublished_notices(db_session, test_admin):
+    """Public list filters and dashboard counts must not reveal unpublished notices."""
+    db_session.add_all(
+        [
+            Notice(
+                notice_id="FS-GMU-2026-PUBLIC1",
+                title="Published notice",
+                category="Academic",
+                original_filename="published.pdf",
+                stored_file_path="published.pdf",
+                mime_type="application/pdf",
+                file_size=100,
+                issuer_admin_id=test_admin.id,
+                publication_status="published",
+            ),
+            Notice(
+                notice_id="FS-GMU-2026-DRAFT01",
+                title="Private draft",
+                category="Academic",
+                original_filename="draft.pdf",
+                stored_file_path="draft.pdf",
+                mime_type="application/pdf",
+                file_size=100,
+                issuer_admin_id=test_admin.id,
+                publication_status="draft",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    public_response = get_notices(
+        page=1,
+        page_size=20,
+        category=None,
+        status="all",
+        search=None,
+        current_admin=None,
+        db=db_session,
+    )
+    admin_response = get_notices(
+        page=1,
+        page_size=20,
+        category=None,
+        status="all",
+        search=None,
+        current_admin=test_admin,
+        db=db_session,
+    )
+
+    assert public_response.total == 1
+    assert public_response.stats.total_notices == 1
+    assert public_response.stats.published_notices == 1
+    assert all(item.publication_status == "published" for item in public_response.items)
+    assert admin_response.total == 2
+    assert admin_response.stats.total_notices == 2
+    assert admin_response.stats.published_notices == 1

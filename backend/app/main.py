@@ -14,6 +14,7 @@ from app.core.config import get_settings
 from app.database import SessionLocal, engine, init_db
 from app.routers.auth import router as auth_router
 from app.routers.notices import router as notices_router
+from app.routers.verification import router as verification_router, verify_notice
 from app.services.auth_service import ensure_default_admin
 
 # Configure structured application logging
@@ -94,6 +95,15 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # ------------------------------------------------------------------------------
 app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
 app.include_router(notices_router, prefix=settings.API_V1_PREFIX)
+app.include_router(verification_router, prefix=settings.API_V1_PREFIX)
+
+# Direct compatibility alias for frontend POST /api/verify
+app.post(
+    "/api/verify",
+    tags=["Verification & Forensics"],
+    summary="Direct Notice Verification Alias",
+    description="Compatibility alias pointing directly to /api/verification/verify",
+)(verify_notice)
 
 
 # ------------------------------------------------------------------------------
@@ -104,8 +114,8 @@ def root():
     """Welcome and API metadata endpoint."""
     return {
         "project": settings.PROJECT_NAME,
-        "version": "2.0.0",
-        "phase": "Phase 2 (Admin Auth & Notice Creation)",
+        "version": "2.5.0",
+        "phase": "Phases 1-7 Fully Operational (Verification, Forensics & Production Hardened)",
         "docs": "/docs",
         "status": "operational",
     }

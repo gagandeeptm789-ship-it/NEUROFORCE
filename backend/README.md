@@ -41,7 +41,7 @@ backend/
 ├── scripts/
 │   └── seed_admin.py     # Controlled administrative onboarding script
 ├── uploads/              # Local storage root for uploaded notice documents
-├── tests/                # Automated test suite (32 unit & integration tests)
+├── tests/                # Automated backend, API, and verification tests
 │   ├── conftest.py
 │   ├── test_auth.py
 │   ├── test_notices.py
@@ -206,24 +206,43 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 ---
 
-## 6. Phase 3 Cryptographic Compatibility
+## 6. Cryptographic Security, Forensics & Verification (Phases 3 - 6)
 
-The architecture prepares for Phase 3 (SHA-256 document hashing and digital signatures):
-1. **Schema Extensibility:** The `notices` table contains pre-migrated nullable columns: `sha256_hash`, `digital_signature`, `signing_key_id`, `signed_metadata`, and `revoked_at`.
-2. **Service Layer Separation:** Cryptographic algorithms are strictly kept out of HTTP route handlers. `app/services/crypto_service.py` provides the `ICryptoService` interface and `Phase3PreparedCryptoService` with `calculate_sha256` and canonical metadata payload formatting.
-3. **Prepared Hook:** `notice_service.prepare_phase3_signing_payload()` is ready to be invoked upon notice creation or batch signing.
+The platform implements an end-to-end multi-layer defense pipeline:
+1. **Cryptographic Signing (Phase 3):**
+   - SHA-256 byte hashing of all original circular files.
+   - Ed25519 high-speed elliptic curve digital signatures over canonical JSON metadata bundles (`notice_id`, `title`, `category`, `document_sha256`, `version`, `created_at_iso`).
+   - Secure key management with key identifiers, active keys, and revocation status tracking.
+2. **Secure Publishing (Phase 4):**
+   - High-contrast QR verification stamps embedded with public verification URLs.
+   - 2D-DCT frequency-domain steganographic watermarking embedded into mid-frequency transform coefficients of the Y-channel.
+3. **Student Verification System (Phase 5):**
+   - Verification by Notice ID lookup, QR code scanning, or direct document upload.
+   - 4-Tier verdict classification:
+     - `AUTHENTIC` / `VERIFIED`: Byte-for-byte exact hash match + valid Ed25519 digital signature.
+     - `AUTHENTIC_BUT_TRANSFORMED`: Structural content matches official record, but file underwent messaging compression or screenshot re-encoding.
+     - `TAMPERING_DETECTED`: Content alteration identified (modified date, title, exam schedule, or copied QR code attack).
+     - `UNVERIFIABLE`: Notice ID or credentials unregistered, signature invalid, or watermark absent.
+4. **Image Forensics & Tampering Engine (Phase 6):**
+   - Automatic deskewing, noise reduction, and CLAHE contrast enhancement (`image_preprocessing.py`).
+   - ORB feature extraction and RANSAC homography estimation for geometric document alignment (`image_matching.py`).
+   - Structural Similarity Index (SSIM) and difference map computation (`image_matching.py`).
+   - Localized alteration contour clustering with bounding box coordinates, severity classification (`HIGH`, `MEDIUM`, `LOW`), and inspection overlays (`tampering_detection.py`).
+   - Copied verification mark attack detection: flags documents where authentic QR codes/watermarks have been spliced onto fraudulent notices.
 
 ---
 
-## 7. Automated Test Suite
+## 7. Automated Test Suite (Phase 7)
 
-Run all automated unit and integration tests:
+Run all 47 automated unit, integration, and security tests:
 ```bash
-pytest -v
+python -m pytest backend/tests/ -v
 ```
 
 ### Test Coverage Highlights:
-- **32 Automated Tests:**
-  - `test_auth.py`: Admin login with valid credentials, invalid password rejection, nonexistent email generic rejection, deactivated account rejection, `/api/admin/me` profile retrieval, JWT bearer validation, missing token handling, tampered JWT rejection, expired JWT rejection, protected registration without secret (403), registration with valid secret (201), weak password rejection (400), duplicate email rejection (400).
-  - `test_notices.py`: PDF document notice creation, PNG image notice creation, JPEG image notice creation, unauthorized notice creation rejection, disallowed file extension rejection, spoofed magic bytes rejection, empty file rejection, oversized file rejection, notice retrieval by Notice ID, 404 nonexistent notice handling, notice listing with category filtering and keyword search, notice publication status updates (draft -> published -> archived), original document file streaming.
-  - `test_storage_and_id.py`: Notice ID format and collision resistance across 100 iterations, directory traversal defense (`../../etc/passwd`), file save/retrieve/delete lifecycle, filename sanitization, Phase 3 SHA-256 calculation verification, Phase 3 canonical metadata formatting.
+- **47 Automated Tests:**
+  - `test_auth.py` (15 tests): Admin login, invalid password rejection, nonexistent email generic rejection, deactivated account rejection, profile retrieval, JWT bearer validation, missing token handling, tampered JWT rejection, expired JWT rejection, protected registration without secret, registration with valid secret, weak password rejection, duplicate email rejection.
+  - `test_notices.py` (11 tests): PDF notice creation, PNG notice creation, JPEG notice creation, unauthorized notice creation rejection, disallowed file extension rejection, spoofed magic bytes rejection, empty file rejection, oversized file rejection, notice retrieval by Notice ID, 404 nonexistent notice handling, notice listing with category filtering and keyword search, notice publication status updates, original document file streaming.
+  - `test_storage_and_id.py` (6 tests): Notice ID format and collision resistance across 100 iterations, directory traversal defense (`../../etc/passwd`), file save/retrieve/delete lifecycle, filename sanitization, SHA-256 calculation verification, canonical metadata formatting.
+  - `test_forensics.py` (6 tests): Image loading across formats (PNG, JPEG, PDF), preprocessing pipeline (deskewing, CLAHE, noise filtering), exact SSIM calculation, transformed notice detection under lossy JPEG compression, localized tampering detection (date/venue modification), copied QR code attack detection.
+  - `test_verification.py` (9 tests): Verification by Notice ID lookup alone, exact byte-for-byte file verification, authentic but transformed verification, localized tampering detection with suspicious regions, copied QR code attack detection, unverifiable unknown notice ID, revoked notice handling, active & ID-based Ed25519 public key retrieval, file byte integrity endpoint.

@@ -10,9 +10,9 @@ export const noticeService = {
    * Verify an uploaded file or Notice ID via the backend verification engine.
    * Only real backend responses are returned; no fake verdicts are invented.
    */
-  verifyNotice: async ({ file, noticeId }) => {
+  verifyNotice: async ({ file, noticeId, qrData }) => {
     try {
-      const response = await noticeApi.verifyDocument(file || noticeId);
+      const response = await noticeApi.verifyDocument({ file, noticeId, qrData });
       return {
         success: true,
         data: response.data,
@@ -38,15 +38,32 @@ export const noticeService = {
    */
   getNotices: async (params = {}) => {
     try {
-      const response = await noticeApi.getNotices(params);
+      const requestParams = {
+        ...params,
+        status: params.status === 'ALL' ? 'all' : params.status?.toLowerCase(),
+      };
+      const response = await noticeApi.getNotices(requestParams);
       const data = response.data || {};
+      const items = (data.items || []).map((notice) => ({
+        ...notice,
+        recordId: notice.id,
+        id: notice.notice_id || notice.id,
+        department: notice.category,
+        issueDate: notice.created_at,
+        fileName: notice.original_filename,
+        status: (notice.distribution_status || notice.publication_status || 'unknown').toUpperCase(),
+        securityAudit: {
+          sha256Digest: notice.sha256_hash,
+        },
+      }));
+      const backendStats = data.stats || {};
       return {
-        items: data.items || [],
-        stats: data.stats || {
-          totalNotices: 0,
-          publishedNotices: 0,
-          flaggedTamperedAttempts: 0,
-          activeVerificationsToday: 0,
+        items,
+        stats: {
+          totalNotices: backendStats.total_notices ?? data.total ?? 0,
+          publishedNotices: backendStats.published_notices ?? 0,
+          flaggedTamperedAttempts: backendStats.flagged_tampered_attempts ?? null,
+          activeVerificationsToday: backendStats.active_verifications_today ?? null,
         },
         recentActivities: data.recentActivities || [],
       };

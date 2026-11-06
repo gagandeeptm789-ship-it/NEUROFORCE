@@ -37,26 +37,6 @@ apiClient.interceptors.response.use(
   }
 );
 
-/**
- * Phase 2 Backend Contract Endpoints:
- * 
- * 1. POST /api/admin/login
- *    Payload: { email, password }
- *    Returns: { access_token, token_type, admin: { id, full_name, role } }
- * 
- * 2. POST /api/notices
- *    Payload: FormData (title, department, file, metadata)
- *    Returns: { notice_id, status, hash, signature, qr_url, created_at }
- * 
- * 3. GET /api/notices
- *    Params: { page, limit, status, search }
- *    Returns: { items: Notice[], total, page, pages }
- * 
- * 4. GET /api/notices/{notice_id}
- *    Path param: notice_id
- *    Returns: Notice details with cryptographic verification records
- */
-
 export const authApi = {
   /**
    * Endpoint: POST /api/admin/login
@@ -96,18 +76,37 @@ export const noticeApi = {
   },
 
   /**
-   * Verification Endpoint placeholder for Phase 2:
-   * Endpoint: POST /api/verify
+   * Verification Endpoint:
+   * Supports file upload, Notice ID lookup, or combined verification.
+   * Endpoint: POST /api/verification/verify or GET /api/verification/notices/{notice_id}
    */
-  verifyDocument: async (fileOrNoticeId) => {
-    if (typeof fileOrNoticeId === 'string') {
-      return apiClient.get(`/api/notices/${encodeURIComponent(fileOrNoticeId)}`);
-    } else {
+  verifyDocument: async (input) => {
+    let file = null;
+    let noticeId = null;
+    let qrData = null;
+
+    if (input instanceof File || input instanceof Blob) {
+      file = input;
+    } else if (typeof input === 'string') {
+      noticeId = input;
+    } else if (input && typeof input === 'object') {
+      file = input.file;
+      noticeId = input.noticeId;
+      qrData = input.qrData;
+    }
+
+    if (file) {
       const data = new FormData();
-      data.append('file', fileOrNoticeId);
-      return apiClient.post('/api/verify', data, {
+      data.append('file', file);
+      if (noticeId) data.append('notice_id', noticeId);
+      if (qrData) data.append('qr_data', qrData);
+      return apiClient.post('/api/verification/verify', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+    } else if (noticeId) {
+      return apiClient.get(`/api/verification/notices/${encodeURIComponent(noticeId)}`);
+    } else {
+      throw new Error('Please provide an official document file or Notice ID to verify.');
     }
   },
 };

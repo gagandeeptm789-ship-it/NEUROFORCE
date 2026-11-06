@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL Database (Local / Self-hosted Alternative to Supabase)
+  # ----------------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    container_name: forwarded_seal_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_secure_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-forwarded_seal}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-forwarded_seal}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - seal_net
+
+  # ----------------------------------------------------------------------------
+  # FastAPI Verification & Administration Backend
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: forwarded_seal_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_2026}@db:5432/${POSTGRES_DB:-forwarded_seal}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-CHANGE_ME_IN_PRODUCTION_MIN_64_CHARACTERS_HEX_SECRET_KEY_HERE}
+      ADMIN_REGISTRATION_SECRET: ${ADMIN_REGISTRATION_SECRET:-SECURE_ADMIN_REGISTRATION_SECRET_2026}
+      ALLOWED_CORS_ORIGINS: '["http://localhost:3000","http://localhost:5173","http://127.0.0.1:3000","http://127.0.0.1:5173"]'
+      AUTO_CREATE_DEFAULT_ADMIN: "false"
+      STORAGE_BACKEND: local
+      UPLOAD_DIR: uploads
+      PUBLISHED_DIR: published
+      KEYS_DIR: keys
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads_data:/app/uploads
+      - published_data:/app/published
+      - keys_data:/app/keys
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - seal_net
+
+  # ----------------------------------------------------------------------------
+  # React Frontend (Vite Production Build via Nginx)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: forwarded_seal_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - seal_net
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+  published_data:
+    driver: local
+  keys_data:
+    driver: local
+
+networks:
+  seal_net:
+    driver: bridge
+

@@ -36,29 +36,35 @@ class CryptoService:
     def generate_signed_metadata(
         self,
         notice_id: str,
-        title: str,
-        category: str,
-        issuer_name: str,
-        issuer_id: str,
-        created_at_iso: str,
         file_sha256: str,
+        issuer_id: str,
+        title: str = "Official Notice",
+        category: str = "General",
+        issuer_name: str = "Administrator",
+        created_at_iso: Optional[str] = None,
+        timestamp_iso: Optional[str] = None,
         description: Optional[str] = None,
         signing_key_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Format canonical metadata payload."""
+        """Format canonical metadata payload with backward-compatible keyword arguments."""
+        iso_time = created_at_iso or timestamp_iso or "2026-01-01T00:00:00Z"
         key_id = signing_key_id or self.signature_service._active_key_id or "default"
-        return self.signature_service.create_canonical_metadata(
+        meta = self.signature_service.create_canonical_metadata(
             notice_id=notice_id,
             title=title,
             description=description,
             category=category,
             issuer_name=issuer_name,
             issuer_id=issuer_id,
-            created_at_iso=created_at_iso,
+            created_at_iso=iso_time,
             sha256_hash=file_sha256,
             signing_key_id=key_id,
             metadata_version=METADATA_VERSION,
         )
+        meta["version"] = meta.get("metadata_version", METADATA_VERSION)
+        meta["document_sha256"] = meta.get("sha256_hash")
+        meta["timestamp"] = meta.get("created_at")
+        return meta
 
     def sign_payload(self, payload: Dict[str, Any], key_id: Optional[str] = None) -> Tuple[str, str]:
         """Sign metadata using Ed25519 private key. Returns (signature_hex, key_id)."""
@@ -72,6 +78,11 @@ class CryptoService:
     ) -> Tuple[str, Optional[str]]:
         """Verify signature against canonical metadata and trusted public key."""
         return self.signature_service.verify_signature(payload, signature_hex, key_id)
+
+
+# Backward compatibility aliases for Phase 2 contracts
+ICryptoService = CryptoService
+Phase3PreparedCryptoService = CryptoService
 
 
 def get_crypto_service() -> CryptoService:

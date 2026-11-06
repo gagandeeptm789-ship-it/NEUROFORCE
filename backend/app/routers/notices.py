@@ -18,14 +18,17 @@ from fastapi import (
     status,
 )
 from fastapi.security import HTTPAuthorizationCredentials
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.security import decode_access_token, security_bearer
 from app.database import get_db
 from app.models.admin import Admin
+from app.models.notice import Notice
 from app.schemas.notice import (
     AdminBrief,
+    NoticeDashboardStats,
     NoticeListResponse,
     NoticeResponse,
     NoticeStatusUpdate,
@@ -163,8 +166,8 @@ def get_notices(
     filter_status = None if isinstance(status, QueryParam) else status
     filter_search = None if isinstance(search, QueryParam) else search
 
-    # If not authenticated as admin and no status requested, default to published
-    if not current_admin and not filter_status:
+    # Public callers must never be able to request draft or archived notices.
+    if not current_admin:
         filter_status = "published"
 
     items, total, total_pages = list_notices(
@@ -177,12 +180,28 @@ def get_notices(
     )
 
     formatted_items = [format_notice_response(n) for n in items]
+    stats_query = db.query(Notice)
+    if not current_admin:
+        stats_query = stats_query.filter(Notice.publication_status == "published")
+    total_notices = stats_query.with_entities(func.count(Notice.id)).scalar() or 0
+    published_notices = (
+        total_notices
+        if not current_admin
+        else db.query(func.count(Notice.id))
+        .filter(Notice.publication_status == "published")
+        .scalar()
+        or 0
+    )
     return NoticeListResponse(
         items=formatted_items,
         total=total,
         page=page,
         page_size=page_size,
         total_pages=total_pages,
+        stats=NoticeDashboardStats(
+            total_notices=total_notices,
+            published_notices=published_notices,
+        ),
     )
 
 

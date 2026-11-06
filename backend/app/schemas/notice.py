@@ -87,6 +87,15 @@ class NoticeListResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int
+    stats: Optional["NoticeDashboardStats"] = None
+
+
+class NoticeDashboardStats(BaseModel):
+    """Persisted dashboard counts; audit counts remain absent until audit storage exists."""
+    total_notices: int
+    published_notices: int
+    flagged_tampered_attempts: Optional[int] = None
+    active_verifications_today: Optional[int] = None
 
 
 class SignatureVerificationRequest(BaseModel):

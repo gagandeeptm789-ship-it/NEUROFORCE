@@ -135,10 +135,11 @@ All API communication is isolated in `src/services/api.js`. The backend endpoint
 | Endpoint | Method | Payload / Params | Service Method | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | `/api/admin/login` | `POST` | `{ email, password }` | `authApi.login()` | Admin token authentication |
-| `/api/notices` | `POST` | `FormData` (title, dept, file) | `noticeApi.createNotice()` | Publish notice & sign cryptographically |
-| `/api/notices` | `GET` | `{ search, status, page }` | `noticeApi.getNotices()` | Query notices in administration ledger |
+| `/api/admin/me` | `GET` | Bearer token | `authApi.getCurrentAdmin()` | Validate the current admin session |
+| `/api/notices` | `POST` | `FormData` (`title`, `category`, `file`) | `noticeApi.createNotice()` | Create and sign an official notice |
+| `/api/notices` | `GET` | `{ search, status, page, page_size }` | `noticeApi.getNotices()` | Query notices and dashboard counts |
 | `/api/notices/{notice_id}` | `GET` | `notice_id` (path param) | `noticeApi.getNoticeById()` | Retrieve notice metadata & signature |
-| `/api/verify` | `POST` | `FormData` (file or notice ID) | `noticeApi.verifyDocument()` | Run forensic & cryptographic analysis |
+| `/api/verification/verify` | `POST` | `FormData` (`file`, `notice_id`, or `qr_data`) | `noticeApi.verifyDocument()` | Run forensic & cryptographic analysis |
 
 Configuration in `.env`:
 ```env
@@ -151,8 +152,8 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 
 ### Prerequisites
 - Node.js (v18+ recommended; tested on v24)
-- npm or pnpm
 - Python 3.10+
+- Docker & Docker Compose (optional for containerized deployment)
 
 ### Run Local Development Server
 
@@ -176,20 +177,27 @@ To start only the frontend (with the backend already running):
 npm.cmd run dev
 ```
 
-#### Option B (Standard npm):
+#### Option B (Full Stack with Docker Compose):
 ```bash
-npm run dev
+docker compose up -d --build
+```
+- Frontend: `http://localhost:3000`
+- Backend API & Interactive Docs: `http://localhost:8000/docs`
+
+---
+
+## 8. Automated Testing & Verification Suite
+
+The repository contains 49 comprehensive automated tests covering:
+- Administrator authentication, password hashing & JWT token validation (`test_auth.py`)
+- Official notice creation, magic bytes inspection & PDF streaming (`test_notices.py`)
+- Unique Notice ID generation & storage security (`test_storage_and_id.py`)
+- ORB geometric alignment, SSIM calculation & localized pixel forensics (`test_forensics.py`)
+- Student verification pipeline, 4-tier verdict classification & copied QR attacks (`test_verification.py`)
+
+Run the complete test suite:
+```bash
+python -m pytest backend/tests/ -v
 ```
 
-Open **[http://localhost:3000](http://localhost:3000)** in your browser.
-
-### Build for Production
-```powershell
-npm.cmd run build
-```
-*(Or `.\build.bat`)*
-
-### Preview Production Build
-```powershell
-npm.cmd run preview
-```
+All 47 tests execute cleanly in under 10 seconds.

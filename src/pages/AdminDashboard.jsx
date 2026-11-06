@@ -23,10 +23,10 @@ const AdminDashboard = () => {
   const location = useLocation();
   const [notices, setNotices] = useState([]);
   const [stats, setStats] = useState({
-    totalNotices: 0,
-    publishedNotices: 0,
-    flaggedTamperedAttempts: 0,
-    activeVerificationsToday: 0,
+    totalNotices: null,
+    publishedNotices: null,
+    flaggedTamperedAttempts: null,
+    activeVerificationsToday: null,
   });
   const [recentActivities, setRecentActivities] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,10 +57,10 @@ const AdminDashboard = () => {
       });
       setNotices(response.items || []);
       setStats(response.stats || {
-        totalNotices: 0,
-        publishedNotices: 0,
-        flaggedTamperedAttempts: 0,
-        activeVerificationsToday: 0,
+        totalNotices: null,
+        publishedNotices: null,
+        flaggedTamperedAttempts: null,
+        activeVerificationsToday: null,
       });
       setRecentActivities(response.recentActivities || []);
     } catch (err) {
@@ -69,10 +69,10 @@ const AdminDashboard = () => {
       );
       setNotices([]);
       setStats({
-        totalNotices: 0,
-        publishedNotices: 0,
-        flaggedTamperedAttempts: 0,
-        activeVerificationsToday: 0,
+        totalNotices: null,
+        publishedNotices: null,
+        flaggedTamperedAttempts: null,
+        activeVerificationsToday: null,
       });
       setRecentActivities([]);
     } finally {
@@ -89,16 +89,19 @@ const AdminDashboard = () => {
 
     const formData = new FormData();
     formData.append('title', newNoticeTitle.trim());
-    formData.append('department', newNoticeDept);
-    if (noticeFile) {
-      formData.append('file', noticeFile);
+    formData.append('category', newNoticeDept);
+    if (!noticeFile) {
+      setCreateNoticeMsg({ type: 'error', text: 'Select an official PDF or image document to upload.' });
+      setIsSubmitting(false);
+      return;
     }
+    formData.append('file', noticeFile);
 
     try {
       await noticeService.createNotice(formData);
       setCreateNoticeMsg({
         type: 'success',
-        text: 'Notice successfully published and cryptographically signed.',
+        text: 'Notice uploaded and cryptographically signed successfully.',
       });
       setTimeout(() => {
         setCreateModalOpen(false);
@@ -120,10 +123,12 @@ const AdminDashboard = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'VERIFIED':
+      case 'PUBLISHED':
+      case 'SIGNED':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-emerald-950 text-emerald-400 border border-emerald-800/60">
             <CheckCircle2 className="w-3 h-3" />
-            <span>VERIFIED</span>
+            <span>{status}</span>
           </span>
         );
       case 'TAMPERING_DETECTED':
@@ -138,6 +143,21 @@ const AdminDashboard = () => {
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-amber-950 text-amber-400 border border-amber-800/60">
             <Layers className="w-3 h-3" />
             <span>TRANSFORMED</span>
+          </span>
+        );
+      case 'DRAFT':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-amber-950 text-amber-300 border border-amber-800/60">
+            <Clock className="w-3 h-3" />
+            <span>DRAFT</span>
+          </span>
+        );
+      case 'ARCHIVED':
+      case 'REVOKED':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">
+            <XCircle className="w-3 h-3" />
+            <span>{status}</span>
           </span>
         );
       default:
@@ -206,7 +226,7 @@ const AdminDashboard = () => {
             <FileText className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-2xl font-black text-white font-mono">
-            {stats.totalNotices}
+            {stats.totalNotices ?? '—'}
           </div>
           <span className="text-[11px] text-slate-500 font-mono mt-1 block">
             Indexed in college registry
@@ -220,7 +240,7 @@ const AdminDashboard = () => {
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-black text-emerald-400 font-mono">
-            {stats.publishedNotices}
+            {stats.publishedNotices ?? '—'}
           </div>
           <span className="text-[11px] text-emerald-500/80 font-mono mt-1 block">
             Cryptographically signed
@@ -234,10 +254,10 @@ const AdminDashboard = () => {
             <AlertTriangle className="w-4 h-4 text-red-400" />
           </div>
           <div className="text-2xl font-black text-red-400 font-mono">
-            {stats.flaggedTamperedAttempts}
+            {stats.flaggedTamperedAttempts ?? '—'}
           </div>
           <span className="text-[11px] text-red-400/80 font-mono mt-1 block">
-            Flagged anomalous queries
+            Audit count unavailable
           </span>
         </div>
 
@@ -248,10 +268,10 @@ const AdminDashboard = () => {
             <Activity className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-2xl font-black text-cyan-400 font-mono">
-            {stats.activeVerificationsToday}
+            {stats.activeVerificationsToday ?? '—'}
           </div>
           <span className="text-[11px] text-slate-500 font-mono mt-1 block">
-            Processed verifications
+            Audit count unavailable
           </span>
         </div>
 
@@ -293,10 +313,9 @@ const AdminDashboard = () => {
                 className="w-full sm:w-auto px-3 py-2 rounded-lg bg-midnight-950 border border-slate-800 text-xs text-slate-300 font-mono focus:outline-none focus:border-cyan-400"
               >
                 <option value="ALL">All Statuses</option>
-                <option value="VERIFIED">Verified</option>
-                <option value="TAMPERING_DETECTED">Tampered</option>
-                <option value="AUTHENTIC_TRANSFORMED">Transformed</option>
-                <option value="UNVERIFIABLE">Unverifiable</option>
+                <option value="PUBLISHED">Published</option>
+                <option value="DRAFT">Draft</option>
+                <option value="ARCHIVED">Archived</option>
               </select>
             </div>
           </div>
@@ -414,7 +433,7 @@ const AdminDashboard = () => {
           <div className="p-8 text-center rounded-lg bg-midnight-950/60 border border-slate-800/60">
             <p className="text-xs text-slate-400 font-mono">No verification history yet</p>
             <p className="text-[11px] text-slate-400 mt-1">
-              Events will record automatically when students verify notices via the verification engine.
+            Verification audit history is not available until audit logging is enabled on the backend.
             </p>
           </div>
         )}

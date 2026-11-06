@@ -285,6 +285,80 @@ const VerificationResult = ({ result, onReset }) => {
           </div>
         )}
 
+        {/* Forensic Visual Inspection & Suspicious Regions (Phase 6) */}
+        {notice.forensicReport && (notice.forensicReport.annotated_preview || (notice.forensicReport.suspicious_regions && notice.forensicReport.suspicious_regions.length > 0)) && (
+          <div className="p-5 rounded-xl bg-midnight-950 border border-slate-800 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-cyan-400" />
+                <span>Forensic Inspection Visuals & Suspicious Regions</span>
+              </h4>
+              <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
+                <span>SSIM: <strong className="text-white">{notice.forensicReport.ssim_score != null ? (notice.forensicReport.ssim_score * 100).toFixed(1) + '%' : 'N/A'}</strong></span>
+                <span>Alignment: <strong className="text-cyan-300">{notice.forensicReport.alignment_quality || 'Aligned'}</strong></span>
+              </div>
+            </div>
+
+            {/* Suspicious Regions List */}
+            {notice.forensicReport.suspicious_regions && notice.forensicReport.suspicious_regions.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[11px] font-mono uppercase text-red-400 block font-semibold">
+                  Detected Tampered / Altered Regions ({notice.forensicReport.suspicious_regions.length})
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {notice.forensicReport.suspicious_regions.map((reg, idx) => (
+                    <div key={idx} className="p-3 rounded-lg bg-midnight-900/90 border border-red-500/30 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold text-red-400">{reg.region_id} • {reg.location}</span>
+                        <span className="px-1.5 py-0.5 text-[10px] font-mono rounded bg-red-950 text-red-300 border border-red-800">
+                          {reg.severity} SEVERITY
+                        </span>
+                      </div>
+                      <p className="text-slate-300 text-[11px]">{reg.reason}</p>
+                      <div className="text-[10px] font-mono text-slate-500">
+                        Bounding Box: [x:{reg.coordinates?.x}, y:{reg.coordinates?.y}, w:{reg.coordinates?.w}, h:{reg.coordinates?.h}]
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Side-by-side Forensic Previews */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {notice.forensicReport.annotated_preview && (
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-mono text-slate-400 block">
+                    Inspection Overlay (Detected Anomalies Highlighted)
+                  </span>
+                  <div className="rounded-lg overflow-hidden border border-slate-700 bg-black/60 max-h-72 flex items-center justify-center">
+                    <img 
+                      src={notice.forensicReport.annotated_preview} 
+                      alt="Inspection Overlay" 
+                      className="w-full h-auto object-contain max-h-72"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {notice.forensicReport.difference_preview && (
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-mono text-slate-400 block">
+                    Structural Difference Heatmap
+                  </span>
+                  <div className="rounded-lg overflow-hidden border border-slate-700 bg-black/60 max-h-72 flex items-center justify-center">
+                    <img 
+                      src={notice.forensicReport.difference_preview} 
+                      alt="Difference Heatmap" 
+                      className="w-full h-auto object-contain max-h-72"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Verdict Summary Box */}
         <div className="p-4 rounded-xl bg-midnight-950/90 border border-cyan-500/20 text-xs text-slate-300 leading-relaxed">
           <strong className="text-cyan-400 font-mono block mb-1">Forensic Analysis Summary:</strong>

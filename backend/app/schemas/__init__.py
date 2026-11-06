@@ -23,6 +23,13 @@ from app.schemas.notice import (
     PublicKeyInfoResponse,
     WatermarkInfoResponse,
 )
+from app.schemas.verification import (
+    ForensicReport,
+    NoticeVerificationResponse,
+    SecurityAuditDetails,
+    SuspiciousRegion,
+    WatermarkExtractionResponse,
+)
 
 __all__ = [
     "AdminBase",
@@ -42,4 +49,9 @@ __all__ = [
     "PublishNoticeResponse",
     "PublicKeyInfoResponse",
     "WatermarkInfoResponse",
+    "SuspiciousRegion",
+    "SecurityAuditDetails",
+    "ForensicReport",
+    "NoticeVerificationResponse",
+    "WatermarkExtractionResponse",
 ]
