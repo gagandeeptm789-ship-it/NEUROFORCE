@@ -1,13 +1,8 @@
 import axios from 'axios';
 
-/**
- * The Forwarded Seal — Backend API Service Client (Phase 2 Contract)
- * 
- * Configured to connect to the upcoming Python FastAPI backend.
- * Endpoints are prepared as documented placeholders.
- */
+/** API client for The Forwarded Seal FastAPI backend. */
 
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'http://localhost:8000';
+const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'http://127.0.0.1:8000';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -47,7 +42,7 @@ apiClient.interceptors.response.use(
  * 
  * 1. POST /api/admin/login
  *    Payload: { email, password }
- *    Returns: { access_token, token_type, admin: { id, name, role } }
+ *    Returns: { access_token, token_type, admin: { id, full_name, role } }
  * 
  * 2. POST /api/notices
  *    Payload: FormData (title, department, file, metadata)
@@ -68,6 +63,9 @@ export const authApi = {
    */
   login: async (credentials) => {
     return apiClient.post('/api/admin/login', credentials);
+  },
+  getCurrentAdmin: async () => {
+    return apiClient.get('/api/admin/me');
   },
 };
 

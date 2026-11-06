@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   FileText, 
   Plus, 
@@ -19,6 +20,7 @@ import {
 import { noticeService } from '../services/noticeService';
 
 const AdminDashboard = () => {
+  const location = useLocation();
   const [notices, setNotices] = useState([]);
   const [stats, setStats] = useState({
     totalNotices: 0,
@@ -150,6 +152,12 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-8 animate-fadeIn">
+      {location.state?.loginSuccess && (
+        <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/50 text-emerald-300 text-xs flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>Login successful. Welcome to the Institutional Admin Dashboard.</span>
+        </div>
+      )}
       
       {/* Dashboard Top Header & CTA */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

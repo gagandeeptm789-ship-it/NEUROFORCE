@@ -1,30 +1,69 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
   LogOut, 
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
+import { authApi } from '../services/api';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
+  const [adminUser, setAdminUser] = useState(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
-  const getAdminUser = () => {
-    try {
-      const stored = localStorage.getItem('fs_admin_user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
+  useEffect(() => {
+    let active = true;
+    const token = localStorage.getItem('fs_admin_token');
+    if (!token) {
+      navigate('/admin/login', { replace: true });
+      return undefined;
     }
-  };
 
-  const adminUser = getAdminUser();
+    authApi.getCurrentAdmin()
+      .then(({ data }) => {
+        if (!active) return;
+        setAdminUser(data);
+        localStorage.setItem('fs_admin_user', JSON.stringify(data));
+      })
+      .catch((error) => {
+        localStorage.removeItem('fs_admin_token');
+        localStorage.removeItem('fs_admin_user');
+        const loginError = error.response
+          ? 'Your session expired. Please sign in again.'
+          : 'The authentication server is unreachable. Start the backend and try again.';
+        navigate('/admin/login', { replace: true, state: { loginError } });
+      })
+      .finally(() => {
+        if (active) setIsCheckingSession(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('fs_admin_token');
     localStorage.removeItem('fs_admin_user');
     navigate('/admin/login');
   };
+
+  const displayRole = adminUser?.role
+    ? adminUser.role
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ')
+    : 'Staff';
+
+  if (isCheckingSession || !adminUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-midnight-950 text-cyan-400">
+        <Loader2 className="w-6 h-6 animate-spin" aria-label="Verifying administrator session" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-midnight-950 text-slate-100 font-sans">
@@ -59,8 +98,8 @@ const AdminLayout = () => {
             
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-midnight-850 border border-slate-800 text-xs">
               <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-              <span className="text-slate-300 font-medium">{adminUser?.name || 'Administrator'}</span>
-              <span className="text-slate-500 font-mono text-[11px]">({adminUser?.role || 'Staff'})</span>
+              <span className="text-slate-300 font-medium">{adminUser?.full_name || adminUser?.name || 'Administrator'}</span>
+              <span className="text-slate-500 font-mono text-[11px]">({displayRole})</span>
             </div>
 
             <Link

@@ -9,10 +9,11 @@ from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
 from app.core.config import get_settings
-from app.core.security import create_access_token
+from app.core.security import create_access_token, verify_password
 from app.routers.auth import get_admin_profile, login_admin, register_new_admin
 from app.schemas.admin import AdminCreate, AdminLogin
 from app.services.auth_service import get_current_active_admin, get_current_admin
+from app.services.auth_service import ensure_default_admin
 
 settings = get_settings()
 
@@ -180,3 +181,30 @@ def test_admin_registration_duplicate_email(db_session, test_admin):
         )
     assert exc_info.value.status_code == 400
     assert "already exists" in exc_info.value.detail.lower()
+
+
+def test_default_admin_is_created_once_with_hashed_password(db_session):
+    """The development admin is idempotent and never stores its password in plain text."""
+    first = ensure_default_admin(
+        db_session,
+        email="admin@gmu.edu",
+        full_name="University Registrar",
+        password="Gmu@12345!",
+    )
+    original_hash = first.password_hash
+    first.role = "super_admin"
+    db_session.commit()
+
+    second = ensure_default_admin(
+        db_session,
+        email="admin@gmu.edu",
+        full_name="Different Name",
+        password="DifferentPassword123!",
+    )
+
+    assert first.id == second.id
+    assert first.email == "admin@gmu.edu"
+    assert first.role == "institutional_admin"
+    assert first.password_hash == original_hash
+    assert verify_password("Gmu@12345!", first.password_hash)
+    assert not verify_password("DifferentPassword123!", first.password_hash)

@@ -142,7 +142,7 @@ All API communication is isolated in `src/services/api.js`. The backend endpoint
 
 Configuration in `.env`:
 ```env
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_BASE_URL=http://127.0.0.1:8000
 ```
 
 ---
@@ -152,16 +152,28 @@ VITE_API_BASE_URL=http://localhost:8000
 ### Prerequisites
 - Node.js (v18+ recommended; tested on v24)
 - npm or pnpm
+- Python 3.10+
 
 ### Run Local Development Server
 
 #### Option A (Recommended for Windows PowerShell):
+Create a backend virtual environment and install its dependencies once:
 ```powershell
-npm.cmd run dev
+python -m venv backend\venv
+.\backend\venv\Scripts\python.exe -m pip install -r backend\requirements.txt
 ```
-*Or simply run:*
+
+Then start both the FastAPI backend and Vite frontend:
 ```powershell
 .\dev.bat
+```
+The demo admin is created automatically on backend startup:
+- Email: `admin@gmu.edu`
+- Password: `Gmu@12345!`
+
+To start only the frontend (with the backend already running):
+```powershell
+npm.cmd run dev
 ```
 
 #### Option B (Standard npm):

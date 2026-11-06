@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
   Lock, 
@@ -15,11 +15,12 @@ import { noticeService } from '../services/noticeService';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState(location.state?.loginError || '');
   const [forgotMsg, setForgotMsg] = useState('');
 
   const validateForm = () => {
@@ -52,16 +53,16 @@ const AdminLogin = () => {
 
     setIsLoading(true);
     try {
-      const response = await noticeService.adminLogin({ email, password });
+      const response = await noticeService.adminLogin({ email: email.trim(), password });
       if (response && response.access_token) {
         localStorage.setItem('fs_admin_token', response.access_token);
         if (response.admin) {
           localStorage.setItem('fs_admin_user', JSON.stringify(response.admin));
         }
-        navigate('/admin/dashboard');
+        navigate('/admin/dashboard', { state: { loginSuccess: true } });
       } else if (response && response.token) {
         localStorage.setItem('fs_admin_token', response.token);
-        navigate('/admin/dashboard');
+        navigate('/admin/dashboard', { state: { loginSuccess: true } });
       } else {
         setErrorMsg('Invalid response from authentication server.');
       }

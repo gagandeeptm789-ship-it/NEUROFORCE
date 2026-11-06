@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-ALLOWED_ADMIN_ROLES = {"super_admin", "admin", "exam_cell"}
+ALLOWED_ADMIN_ROLES = {"institutional_admin", "super_admin", "admin", "exam_cell"}
 
 
 class AdminBase(BaseModel):
@@ -66,4 +66,3 @@ class AdminUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=100)
     role: Optional[str] = Field(None, min_length=2, max_length=50)
     is_active: Optional[bool] = None
-

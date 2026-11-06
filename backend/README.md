@@ -41,7 +41,7 @@ backend/
 ├── scripts/
 │   └── seed_admin.py     # Controlled administrative onboarding script
 ├── uploads/              # Local storage root for uploaded notice documents
-├── tests/                # Automated test suite (31 unit & integration tests)
+├── tests/                # Automated test suite (32 unit & integration tests)
 │   ├── conftest.py
 │   ├── test_auth.py
 │   ├── test_notices.py
@@ -150,8 +150,9 @@ Key settings in `.env`:
 ### 5. Seed Initial Administrator Account
 Bootstrap the primary administrator without exposing open registration:
 ```bash
-python scripts/seed_admin.py --email admin@gmu.edu --name "University Registrar" --password "AdminPass123!" --role super_admin
+python scripts/seed_admin.py --email admin@gmu.edu --name "University Registrar" --password "Gmu@12345!" --role institutional_admin
 ```
+In development, the same account is automatically created on backend startup when `AUTO_CREATE_DEFAULT_ADMIN=true`. The demo login is `admin@gmu.edu` / `Gmu@12345!`. To update an existing account with the seed script, include `--reset-password`. Set `AUTO_CREATE_DEFAULT_ADMIN=false` and provide real administrator credentials before production deployment; automatic demo provisioning is disabled by default outside development.
 
 ### 6. Run Migrations (Optional / Production)
 ```bash
@@ -222,8 +223,7 @@ pytest -v
 ```
 
 ### Test Coverage Highlights:
-- **31 Automated Tests:**
+- **32 Automated Tests:**
   - `test_auth.py`: Admin login with valid credentials, invalid password rejection, nonexistent email generic rejection, deactivated account rejection, `/api/admin/me` profile retrieval, JWT bearer validation, missing token handling, tampered JWT rejection, expired JWT rejection, protected registration without secret (403), registration with valid secret (201), weak password rejection (400), duplicate email rejection (400).
   - `test_notices.py`: PDF document notice creation, PNG image notice creation, JPEG image notice creation, unauthorized notice creation rejection, disallowed file extension rejection, spoofed magic bytes rejection, empty file rejection, oversized file rejection, notice retrieval by Notice ID, 404 nonexistent notice handling, notice listing with category filtering and keyword search, notice publication status updates (draft -> published -> archived), original document file streaming.
   - `test_storage_and_id.py`: Notice ID format and collision resistance across 100 iterations, directory traversal defense (`../../etc/passwd`), file save/retrieve/delete lifecycle, filename sanitization, Phase 3 SHA-256 calculation verification, Phase 3 canonical metadata formatting.
-

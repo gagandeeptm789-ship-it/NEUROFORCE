@@ -24,6 +24,14 @@ class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     DEBUG: bool = os.getenv("DEBUG", "true").lower() in ("true", "1", "yes")
     API_V1_PREFIX: str = os.getenv("API_V1_PREFIX", "/api")
+    AUTO_CREATE_DEFAULT_ADMIN: bool = os.getenv(
+        "AUTO_CREATE_DEFAULT_ADMIN",
+        "true" if ENVIRONMENT.lower() == "development" else "false",
+    ).lower() in ("true", "1", "yes")
+    DEFAULT_ADMIN_EMAIL: str = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@gmu.edu")
+    DEFAULT_ADMIN_PASSWORD: str = os.getenv("DEFAULT_ADMIN_PASSWORD", "Gmu@12345!")
+    DEFAULT_ADMIN_NAME: str = os.getenv("DEFAULT_ADMIN_NAME", "University Registrar")
+    DEFAULT_ADMIN_ROLE: str = os.getenv("DEFAULT_ADMIN_ROLE", "institutional_admin")
 
     # Security & JWT
     SECRET_KEY: str = os.getenv(
@@ -72,4 +80,3 @@ class Settings:
 def get_settings() -> Settings:
     """Return cached application settings singleton."""
     return Settings()
-

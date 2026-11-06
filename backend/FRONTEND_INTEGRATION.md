@@ -11,9 +11,11 @@ The FastAPI backend is fully operational and provides the exact REST API contrac
 - **Base URL:** `http://127.0.0.1:8000/api` (or `http://localhost:8000/api`)
 - **Swagger Interactive Docs:** `http://localhost:8000/docs`
 - **CORS Allowed Origins:** `http://localhost:3000`, `http://localhost:5173`, `http://127.0.0.1:3000`, `http://127.0.0.1:5173`
-- **Default Test Admin Account:**
+- **Local development admin account** (created automatically on backend startup):
   - **Email:** `admin@gmu.edu`
-  - **Password:** `AdminPass123!`
+  - **Password:** `Gmu@12345!`
+  - If the account already exists, update it with `python scripts/seed_admin.py --password "Gmu@12345!" --role institutional_admin --reset-password`.
+  - Do not use these development credentials in production.
 
 ---
 
@@ -44,7 +46,7 @@ Authenticate an administrator with email and password.
 ```json
 {
   "email": "admin@gmu.edu",
-  "password": "AdminPass123!"
+  "password": "Gmu@12345!"
 }
 ```
 
@@ -340,4 +342,3 @@ export async function fetchNotices({ page = 1, category, status, search }) {
    - Permitted formats: `.pdf`, `.png`, `.jpg`, `.jpeg`.
    - Maximum upload size: 10 MB.
 3. **Notice ID Display:** Always display the official `notice_id` (e.g. `FS-GMU-2026-A8F29C`) prominently alongside the notice so students and authorities can verify it.
-

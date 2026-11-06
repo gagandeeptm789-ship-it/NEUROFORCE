@@ -109,6 +109,34 @@ def register_admin(db: Session, admin_in: AdminCreate) -> Admin:
     return new_admin
 
 
+def ensure_default_admin(
+    db: Session,
+    email: str,
+    full_name: str,
+    password: str,
+    role: str = "institutional_admin",
+) -> Admin:
+    """Create the configured development admin once without changing existing credentials."""
+    existing = get_admin_by_email(db, email)
+    if existing:
+        if existing.role != role:
+            existing.role = role
+            db.commit()
+            db.refresh(existing)
+        logger.info("Default administrator '%s' already exists; leaving its credentials unchanged.", existing.email)
+        return existing
+
+    return register_admin(
+        db,
+        AdminCreate(
+            email=email,
+            full_name=full_name,
+            password=password,
+            role=role,
+        ),
+    )
+
+
 # ==============================================================================
 # FastAPI Route Dependencies
 # ==============================================================================
@@ -158,4 +186,3 @@ def get_current_active_admin(
             detail="Administrator account is inactive.",
         )
     return current_admin
-

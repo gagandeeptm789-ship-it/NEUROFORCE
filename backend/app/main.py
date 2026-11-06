@@ -11,9 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
-from app.database import engine, init_db
+from app.database import SessionLocal, engine, init_db
 from app.routers.auth import router as auth_router
 from app.routers.notices import router as notices_router
+from app.services.auth_service import ensure_default_admin
 
 # Configure structured application logging
 logging.basicConfig(
@@ -29,12 +30,19 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     """Lifecycle events: startup and shutdown."""
     logger.info("Starting up %s (env: %s)...", settings.PROJECT_NAME, settings.ENVIRONMENT)
-    # Initialize database tables
-    try:
-        init_db()
-        logger.info("Database connectivity verified.")
-    except Exception as e:
-        logger.error("Database initialization error: %s", e)
+    init_db()
+    logger.info("Database connectivity verified.")
+    if settings.AUTO_CREATE_DEFAULT_ADMIN:
+        if settings.ENVIRONMENT.lower() in {"production", "prod"}:
+            raise RuntimeError("AUTO_CREATE_DEFAULT_ADMIN must be disabled in production.")
+        with SessionLocal() as db:
+            ensure_default_admin(
+                db=db,
+                email=settings.DEFAULT_ADMIN_EMAIL,
+                full_name=settings.DEFAULT_ADMIN_NAME,
+                password=settings.DEFAULT_ADMIN_PASSWORD,
+                role=settings.DEFAULT_ADMIN_ROLE,
+            )
     yield
     logger.info("Shutting down %s...", settings.PROJECT_NAME)
 
@@ -119,4 +127,3 @@ def health_check():
         "database": db_status,
         "environment": settings.ENVIRONMENT,
     }
-
